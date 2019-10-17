@@ -16,23 +16,22 @@ headers = {
 resp = requests.get(IP_API).json()
 ip = resp['ip']
 
-response = requests.get("https://api.cloudflare.com/client/v4/zones", headers=headers, params={"status":"active","page":"1","per_page":"20","order":"status","direction":"desc","match":"all"}).json() #get all zones
+response = requests.get("https://api.cloudflare.com/client/v4/zones", headers=headers, params={"status":"active","page":"1","per_page":"20","order":"status","direction":"desc","match":"all"}).json()
 
 for item in response['result']:
-    r = requests.get("https://api.cloudflare.com/client/v4/zones/{}/dns_records?type=A".format(item['id']), headers=headers).json() #get record ids for all A records
-    if r['success'] == True: 
+    r = requests.get("https://api.cloudflare.com/client/v4/zones/{}/dns_records?type=A".format(item['id']), headers=headers).json()
+    if r['success'] == True:
         for record in r['result']:
-            if record['content'] == ip: #don't update domains that match the current ip
-                logging.info("Record '{}' skipped, IP matches".format(record['name']))
+            if record['content'] == ip:
                 continue
-            else: #update any that don't match
+            else:
                 resp = requests.put(
                     'https://api.cloudflare.com/client/v4/zones/{}/dns_records/{}'.format(item['id'], record['id']),
                     json={
                         'type': 'A',
                         'name': record['name'],
                         'content': ip,
-                        'proxied': True #ensure domains are proxied
+                        'proxied': True
                     },
                     headers=headers)
                 assert resp.status_code == 200
